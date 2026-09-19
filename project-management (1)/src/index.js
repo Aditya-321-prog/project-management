@@ -11,6 +11,7 @@ import app from "./app.js";
 import connectDB from "./db/index.js";
 import { initializeSocket } from "./socket/socket.js";
 import { allowedOrigins } from "./utils/config.js";
+import { startSchedulers } from "./jobs/scheduler.js";
 
 const port = process.env.PORT ?? 8000;
 
@@ -29,6 +30,7 @@ connectDB()
   .then(() => {
     httpServer.listen(port, () => {
       console.log(`Server running at http://localhost:${port}`);
+      startSchedulers();
     });
   })
   .catch((err) => {

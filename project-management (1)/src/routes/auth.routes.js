@@ -12,6 +12,7 @@ import {
   resetForgotPassword,
   verifyEmail,
   updateAccountDetails,
+  updatePreferences,
   updateUserAvatar,
 } from "../controllers/auth.controllers.js";
 import { validate } from "../middlewares/validator.middleware.js";
@@ -56,6 +57,8 @@ router
 router
   .route("/resend-email-verification")
   .post(verifyJWT, resendEmailVerification);
+
+router.route("/preferences").patch(verifyJWT, updatePreferences);
 
 router.route("/update-account").patch(
   verifyJWT,

@@ -98,7 +98,58 @@ const forgotPasswordMailgenContent = (username, passwordResetUrl) => {
   };
 };
 
+// Roz ka deadline digest: kal / aaj due + overdue tasks
+const deadlineReminderMailgenContent = (name, { dueSoon = [], overdue = [] }) => {
+  const appUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
+  const toRows = (items) =>
+    items.map((t) => ({
+      Task: t.title,
+      Project: t.projectName,
+      Due: t.dueLabel,
+      Priority: t.priority,
+    }));
+
+  const table = [];
+  if (overdue.length) {
+    table.push({
+      title: `⚠️ Overdue (${overdue.length})`,
+      data: toRows(overdue),
+    });
+  }
+  if (dueSoon.length) {
+    table.push({
+      title: `⏰ Due soon (${dueSoon.length})`,
+      data: toRows(dueSoon),
+    });
+  }
+
+  return {
+    body: {
+      name,
+      intro: [
+        "Here is a quick reminder about your task deadlines.",
+        overdue.length
+          ? `${overdue.length} task${overdue.length > 1 ? "s are" : " is"} overdue.`
+          : "Some of your tasks are due soon.",
+      ],
+      table,
+      action: {
+        instructions: "See all your tasks in one place:",
+        button: {
+          color: "#2563eb",
+          text: "Open My Tasks",
+          link: `${appUrl}/my-tasks`,
+        },
+      },
+      outro:
+        "Don't want these emails? Turn off 'Deadline reminder emails' on your Profile page.",
+    },
+  };
+};
+
 export {
+  deadlineReminderMailgenContent,
   emailVerificationMailgenContent,
   forgotPasswordMailgenContent,
   sendEmail,

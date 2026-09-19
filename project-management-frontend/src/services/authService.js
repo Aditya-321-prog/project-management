@@ -46,6 +46,10 @@ export const updateAvatar = (formData) => {
   );
 };
 
+// { emailReminders: true/false }
+export const updatePreferences = (data) =>
+  api.patch("/auth/preferences", data);
+
 export const googleLogin = (token) =>
     api.post("/auth/google-login", {
         token,

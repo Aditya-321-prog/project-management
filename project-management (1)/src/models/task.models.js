@@ -36,6 +36,13 @@ const taskSchema = new Schema(
     dueDate: {
       type: Date,
     },
+
+    // Kis deadline ke liye reminder bhej chuke hain (duplicate na jaaye).
+    // Deadline badli to ye match nahi karega aur naya reminder jaayega.
+    reminders: {
+      dueSoonFor: { type: Date, default: null },
+      overdueFor: { type: Date, default: null },
+    },
     attachments: {
   type: [
     {

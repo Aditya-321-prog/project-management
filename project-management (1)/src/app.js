@@ -41,6 +41,7 @@ import notificationRoutes from "./routes/notification.routes.js";
 import activityRoutes from "./routes/activity.routes.js";
 import commentRouter from "./routes/comment.routes.js";
 import messageRouter from "./routes/message.routes.js";
+import reminderRouter from "./routes/reminder.routes.js";
 
 
 app.use("/api/v1/healthcheck", healthCheckRouter);
@@ -54,6 +55,7 @@ app.use("/api/v1/notifications",notificationRoutes);
 app.use("/api/v1/activities", activityRoutes);
 app.use("/api/v1/comments",commentRouter);
 app.use("/api/v1/messages", messageRouter);
+app.use("/api/v1/reminders", reminderRouter);
 
 
 app.get("/", (req, res) => {

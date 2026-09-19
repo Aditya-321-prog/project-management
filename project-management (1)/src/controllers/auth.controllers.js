@@ -539,6 +539,25 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password changed successfully"));
 });
 
+// PATCH /auth/preferences  { emailReminders: true/false }
+const updatePreferences = asyncHandler(async (req, res) => {
+  const { emailReminders } = req.body;
+
+  if (typeof emailReminders !== "boolean") {
+    throw new ApiError(400, "emailReminders must be true or false");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { $set: { emailReminders } },
+    { new: true },
+  ).select(SAFE_USER_FIELDS);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "Preferences updated"));
+});
+
 const updateAccountDetails = asyncHandler(async (req, res) => {
 
   const user = await User.findById(req.user._id);
@@ -634,6 +653,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 });
 
 export {
+  updatePreferences,
   registerUser,
   login,
   logoutUser,

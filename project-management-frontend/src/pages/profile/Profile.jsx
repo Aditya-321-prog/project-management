@@ -18,6 +18,7 @@ import { useAuthStore } from "../../store/authStore";
 
 import {
   getCurrentUser,
+  updatePreferences,
   updateAccount,
   updateAvatar,
   changePassword,
@@ -42,6 +43,8 @@ export default function Profile() {
   const [currentUser, setCurrentUser] = useState(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
+
+  const [prefSaving, setPrefSaving] = useState(false);
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
@@ -238,6 +241,21 @@ export default function Profile() {
 
     }
 
+  };
+
+  // Deadline reminder emails on/off (turant save)
+  const toggleEmailReminders = async () => {
+    const next = currentUser?.emailReminders === false;
+    setPrefSaving(true);
+    setCurrentUser((prev) => ({ ...prev, emailReminders: next }));
+    try {
+      await updatePreferences({ emailReminders: next });
+      toast.success(next ? "Reminder emails on" : "Reminder emails off");
+    } catch {
+      setCurrentUser((prev) => ({ ...prev, emailReminders: !next }));
+    } finally {
+      setPrefSaving(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -538,6 +556,52 @@ export default function Profile() {
                     <Lock size={18} />
 
                     Change Password
+                </button>
+
+            </div>
+
+        </div>
+
+
+
+        {/* NOTIFICATIONS */}
+
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm dark:shadow-slate-950/20">
+
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                Notifications
+            </h2>
+
+            <div className="mt-6 flex items-start justify-between gap-6">
+
+                <div>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">
+                        Deadline reminder emails
+                    </p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        Roz subah 9 baje ek email: jo tasks kal/aaj due hain ya overdue ho gaye.
+                        App ke andar wale notifications hamesha aate rahenge.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    role="switch"
+                    aria-checked={currentUser?.emailReminders !== false}
+                    aria-label="Deadline reminder emails"
+                    onClick={toggleEmailReminders}
+                    disabled={prefSaving}
+                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 ${
+                        currentUser?.emailReminders !== false
+                            ? "bg-blue-600"
+                            : "bg-slate-300 dark:bg-slate-700"
+                    }`}
+                >
+                    <span
+                        className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${
+                            currentUser?.emailReminders !== false ? "translate-x-6" : "translate-x-1"
+                        }`}
+                    />
                 </button>
 
             </div>

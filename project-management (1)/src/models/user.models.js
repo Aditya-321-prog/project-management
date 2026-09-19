@@ -42,6 +42,11 @@ const userSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    // Deadline reminder emails chahiye ya nahi (Profile se on/off)
+    emailReminders: {
+      type: Boolean,
+      default: true,
+    },
     refreshToken: {
       type: String,
     },
