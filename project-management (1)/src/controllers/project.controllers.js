@@ -17,6 +17,7 @@ import { Task } from "../models/task.models.js";
 import { Subtask } from "../models/subtask.models.js";
 import { Note } from "../models/note.models.js";
 import { Message } from "../models/message.models.js";
+import { deleteStoredFiles } from "../utils/storage.js";
 
 // Kai logon ko ek saath notification bhejna: 1 DB call (insertMany) + socket emit
 const notifyUsers = async (userIds, { title, message, type }) => {
@@ -358,77 +359,13 @@ const deleteProject = asyncHandler(async (req, res) => {
 
 
 
-    // Delete physical task files
-
-
-    for (const task of tasks) {
-
-        // Task attachments
-        if (task.attachments?.length) {
-
-            for (const file of task.attachments) {
-
-                if (file.localPath) {
-
-                    try {
-
-                        await fs.unlink(
-                            file.localPath
-                        );
-
-                    } catch (error) {
-
-                        console.log(
-                            "Attachment file not found:",
-                            file.localPath
-                        );
-
-                    }
-
-                }
-
-            }
-
-        }
-
-
-        // Submission files
-        if (task.submissions?.length) {
-
-            for (const submission of task.submissions) {
-
-                if (submission.files?.length) {
-
-                    for (const file of submission.files) {
-
-                        if (file.localPath) {
-
-                            try {
-
-                                await fs.unlink(
-                                    file.localPath
-                                );
-
-                            } catch (error) {
-
-                                console.log(
-                                    "Submission file not found:",
-                                    file.localPath
-                                );
-
-                            }
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        }
-
-    }
+    // Saari task files (attachments + submissions) - local ya Cloudinary
+    await deleteStoredFiles(
+        tasks.flatMap((task) => [
+            ...(task.attachments || []),
+            ...(task.submissions || []).flatMap((submission) => submission.files || []),
+        ]),
+    );
 
 
 

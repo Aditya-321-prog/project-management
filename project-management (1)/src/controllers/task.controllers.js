@@ -18,6 +18,11 @@ import { ProjectMember } from "../models/projectmember.models.js";
 import fs from "fs";
 import { getIO } from "../socket/socket.js";
 import { Comment } from "../models/comment.models.js";
+import {
+  storeUploadedFiles,
+  deleteStoredFiles,
+  removeTempUploads,
+} from "../utils/storage.js";
 
 // ==========================================
 // Helpers: links
@@ -65,21 +70,23 @@ const normalizeLinks = (links, userId, existingLinks = []) => {
     });
 };
 
-const buildAttachment = (req, file) => ({
-  filename: file.originalname,
-  url: `${req.protocol}://${req.get("host")}/task-attachments/${file.filename}`,
-  localPath: file.path,
-  mimetype: file.mimetype,
-  size: file.size,
-  uploadedBy: req.user._id,
-});
+// Multer files -> Cloudinary / local par save karke attachment objects
+const buildAttachments = async (req, files, folder = "task-attachments") => {
+  const stored = await storeUploadedFiles(req, files, folder);
+  return files.map((file, i) => ({
+    filename: file.originalname,
+    url: stored[i].url,
+    localPath: stored[i].localPath,
+    publicId: stored[i].publicId,
+    resourceType: stored[i].resourceType,
+    mimetype: file.mimetype,
+    size: file.size,
+    uploadedBy: req.user._id,
+  }));
+};
 
 // Upload ho chuki files hata do (jab request fail ho jaye)
-const cleanupUploadedFiles = (files = []) => {
-  for (const file of files) {
-    fs.unlink(file.path, () => {});
-  }
-};
+const cleanupUploadedFiles = (files = []) => removeTempUploads(files);
 
 // Task dhoondo aur check karo ki wo isi project ka hai.
 // Pehle sirf taskId se dhoondte the - kisi dusre project ka admin
@@ -149,6 +156,7 @@ const createTask = asyncHandler(async (req, res) => {
 
   const { projectId } = req.params;
   const uploadedFiles = req.files || [];
+  let storedAttachments = [];
 
   try {
     if (!title?.trim()) {
@@ -178,6 +186,8 @@ const createTask = asyncHandler(async (req, res) => {
       }
     }
 
+    storedAttachments = await buildAttachments(req, uploadedFiles);
+
     const task = await Task.create({
       title: title.trim(),
       description,
@@ -185,7 +195,7 @@ const createTask = asyncHandler(async (req, res) => {
       assignedTo: assignedTo || undefined,
       status: status || undefined,
       assignedBy: req.user._id,
-      attachments: uploadedFiles.map((file) => buildAttachment(req, file)),
+      attachments: storedAttachments,
       links: taskLinks,
       priority: priority || undefined,
       dueDate: dueDate || undefined,
@@ -221,6 +231,8 @@ const createTask = asyncHandler(async (req, res) => {
       .json(new ApiResponse(201, task, "Task created successfully"));
   } catch (error) {
     cleanupUploadedFiles(uploadedFiles);
+    // Task nahi bana to cloud par gayi files bhi hata do
+    await deleteStoredFiles(storedAttachments);
     throw error;
   }
 });
@@ -707,6 +719,7 @@ const updateTask = asyncHandler(async (req, res) => {
     } = req.body;
 
     const newFiles = req.files || [];
+    let newStored = [];
 
     try {
 
@@ -766,7 +779,7 @@ const updateTask = asyncHandler(async (req, res) => {
         if (Array.isArray(removeIds) && removeIds.length) {
             task.attachments = task.attachments.filter((file) => {
                 if (removeIds.includes(file._id.toString())) {
-                    if (file.localPath) filesToDelete.push(file.localPath);
+                    filesToDelete.push(file);
                     return false;
                 }
                 return true;
@@ -774,16 +787,13 @@ const updateTask = asyncHandler(async (req, res) => {
         }
 
         // ---------- Nayi files jodna ----------
-        for (const file of newFiles) {
-            task.attachments.push(buildAttachment(req, file));
-        }
+        newStored = await buildAttachments(req, newFiles);
+        task.attachments.push(...newStored);
 
         await task.save();
 
-        // DB save hone ke baad hi purani files disk se delete karo
-        for (const filePath of filesToDelete) {
-            fs.unlink(filePath, () => {});
-        }
+        // DB save hone ke baad hi purani files (disk / Cloudinary) delete karo
+        await deleteStoredFiles(filesToDelete);
 
         await task.populate("assignedTo", "avatar username fullName");
 
@@ -828,6 +838,7 @@ const updateTask = asyncHandler(async (req, res) => {
     } catch (error) {
         // Error aaya to is request me upload hui files bekaar hain, hata do
         cleanupUploadedFiles(newFiles);
+        await deleteStoredFiles(newStored);
         throw error;
     }
 });
@@ -954,56 +965,13 @@ const deleteTask = asyncHandler(async (req, res) => {
     // Collect attachment file paths
     // ==========================================
 
-    const filePaths = [];
+    // Attachments + submissions ki saari files (local ya Cloudinary)
+    const filesToDelete = [
+        ...(task.attachments || []),
+        ...(task.submissions || []).flatMap((submission) => submission.files || []),
+    ];
 
-    // Task attachments
-    for (const attachment of task.attachments || []) {
-
-        if (attachment.localPath) {
-            filePaths.push(attachment.localPath);
-        }
-
-    }
-
-
-    // Submission files
-    for (const submission of task.submissions || []) {
-
-        for (const file of submission.files || []) {
-
-            if (file.localPath) {
-                filePaths.push(file.localPath);
-            }
-
-        }
-
-    }
-
-
-    // ==========================================
-    // Delete physical files
-
-
-    for (const filePath of filePaths) {
-
-        try {
-
-            await fs.promises.unlink(filePath);
-
-        } catch (error) {
-
-            // File already missing -> ignore
-            if (error.code !== "ENOENT") {
-                console.log(
-                    "Error deleting file:",
-                    filePath,
-                    error
-                );
-            }
-
-        }
-
-    }
+    await deleteStoredFiles(filesToDelete);
 
 
     // Delete task
@@ -1081,6 +1049,7 @@ const submitTask = asyncHandler(async (req, res) => {
 
     const { taskId, projectId } = req.params;
     const uploadedFiles = req.files || [];
+    let storedFiles = [];
 
     try {
         const task = await findTaskInProject(taskId, projectId);
@@ -1111,15 +1080,11 @@ const submitTask = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Please upload at least one file");
         }
 
+        storedFiles = await buildAttachments(req, uploadedFiles, "task-submissions");
+
         task.submissions.push({
             submittedBy: req.user._id,
-            files: uploadedFiles.map((file) => ({
-                filename: file.originalname,
-                url: `${req.protocol}://${req.get("host")}/task-submissions/${file.filename}`,
-                localPath: file.path,
-                mimetype: file.mimetype,
-                size: file.size,
-            })),
+            files: storedFiles.map(({ uploadedBy, ...file }) => file),
             submittedAt: new Date(),
             status: "pending",
         });
@@ -1165,6 +1130,7 @@ const submitTask = asyncHandler(async (req, res) => {
         );
     } catch (error) {
         cleanupUploadedFiles(uploadedFiles);
+        await deleteStoredFiles(storedFiles);
         throw error;
     }
 });

@@ -13,6 +13,7 @@ import crypto from "crypto";
 import fs from "fs";
 import { Notification } from "../models/notification.models.js";
 import { cookieOptions } from "../utils/config.js";
+import { storeUploadedFile, deleteStoredFile } from "../utils/storage.js";
 
 const googleClient = new OAuth2Client();
 
@@ -627,18 +628,24 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  const oldAvatarPath = user.avatar?.localPath;
+  const oldAvatar = user.avatar?.toObject ? user.avatar.toObject() : user.avatar;
+
+  // Cloudinary (ya local) par save
+  const stored = await storeUploadedFile(req, req.file, "avatars");
 
   user.avatar = {
-    url: `${req.protocol}://${req.get("host")}/avatars/${req.file.filename}`,
-    localPath: req.file.path,
+    url: stored.url,
+    localPath: stored.localPath || "",
+    publicId: stored.publicId,
+    resourceType: stored.resourceType,
   };
 
   await user.save({ validateBeforeSave: false });
 
-  // Purani avatar file disk se hata do (pehle har upload jama hota rehta tha)
-  if (oldAvatarPath && oldAvatarPath.includes("avatars")) {
-    fs.unlink(oldAvatarPath, () => {});
+  // Purani photo hata do - sirf wahi jo humne upload ki thi
+  // (Google wali photo ya placeholder ko nahi chhedna)
+  if (oldAvatar?.publicId || oldAvatar?.localPath?.includes("avatars")) {
+    await deleteStoredFile(oldAvatar);
   }
 
   const updatedUser = await User.findById(user._id).select(SAFE_USER_FIELDS);

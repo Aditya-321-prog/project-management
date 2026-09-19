@@ -62,9 +62,21 @@ const taskSchema = new Schema(
         required: true,
       },
 
+      // Local storage par file ka path (Cloudinary par null)
       localPath: {
         type: String,
-        required: true,
+        default: null,
+      },
+
+      // Cloudinary par file ki id (delete karne ke liye)
+      publicId: {
+        type: String,
+        default: null,
+      },
+
+      resourceType: {
+        type: String,
+        default: null,
       },
 
       mimetype: {
@@ -137,7 +149,17 @@ submissions: {
 
                     localPath: {
                         type: String,
-                        required: true,
+                        default: null,
+                    },
+
+                    publicId: {
+                        type: String,
+                        default: null,
+                    },
+
+                    resourceType: {
+                        type: String,
+                        default: null,
                     },
 
                     mimetype: String,

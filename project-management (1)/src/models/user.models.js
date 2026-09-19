@@ -9,6 +9,8 @@ const userSchema = new Schema(
       type: {
         url: String,
         localPath: String,
+        publicId: String,
+        resourceType: String,
       },
       default: {
         url: `https://placehold.co/200x200`,
