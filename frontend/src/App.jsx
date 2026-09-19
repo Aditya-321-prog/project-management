@@ -24,8 +24,15 @@ function App() {
   // api.js se aata hai jab refresh token bhi expire ho jaye
   useEffect(() => {
     const handleExpired = () => {
+      // BUG FIX: pehli baar aane wale (logged-out) visitor ke liye bhi
+      // checkAuth -> 401 -> refresh fail -> ye event aata tha, aur landing
+      // page ki jagah seedha login page khul jaata tha.
+      // Ab login page par sirf tab bhejo jab user sach me logged in tha.
+      const wasLoggedIn = useAuthStore.getState().isAuthenticated;
       clearSession();
-      navigate("/login", { replace: true });
+      if (wasLoggedIn) {
+        navigate("/login", { replace: true });
+      }
     };
     window.addEventListener("session-expired", handleExpired);
     return () => window.removeEventListener("session-expired", handleExpired);
