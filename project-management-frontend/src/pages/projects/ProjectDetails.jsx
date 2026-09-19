@@ -50,6 +50,7 @@ import { toast } from "react-hot-toast";
 import { PageSkeleton } from "../../components/common/Skeleton";
 import TaskToolbar from "../../components/tasks/TaskToolbar";
 import KanbanBoard from "../../components/tasks/KanbanBoard";
+import ProjectChat from "../../components/chat/ProjectChat";
 import { LayoutGrid, List as ListIcon } from "lucide-react";
 import DueBadge from "../../components/tasks/DueBadge";
 import {
@@ -3236,7 +3237,15 @@ rounded-lg
     )}
 
 </div>
-     
+
+        {/* Project group chat (neeche-right button) */}
+        <ProjectChat
+            projectId={projectId}
+            projectName={project?.name}
+            currentUser={currentUser}
+            isAdmin={isAdmin}
+        />
+
         </div>
 	);
 }

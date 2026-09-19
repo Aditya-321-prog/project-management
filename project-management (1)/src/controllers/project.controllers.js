@@ -16,6 +16,7 @@ import { Comment } from "../models/comment.models.js";
 import { Task } from "../models/task.models.js";
 import { Subtask } from "../models/subtask.models.js";
 import { Note } from "../models/note.models.js";
+import { Message } from "../models/message.models.js";
 
 // Kai logon ko ek saath notification bhejna: 1 DB call (insertMany) + socket emit
 const notifyUsers = async (userIds, { title, message, type }) => {
@@ -474,6 +475,7 @@ const deleteProject = asyncHandler(async (req, res) => {
         Comment.deleteMany({ project: projectId }),
         Activity.deleteMany({ project: projectId }),
         Note.deleteMany({ project: projectId }),
+        Message.deleteMany({ project: projectId }),
     ]);
 
 
@@ -781,6 +783,10 @@ const deleteMember = asyncHandler(async (req, res) => {
   getIO()
     .to(projectMember.user._id.toString())
     .emit("project-deleted", { projectId });
+
+  // Nikaale gaye member ke khule tabs ko project room (chat, live updates)
+  // se bhi bahar karo
+  getIO().in(projectMember.user._id.toString()).socketsLeave(`project:${projectId}`);
 
   getIO()
     .to(`project:${projectId}`)

@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { ProjectMember } from "../models/projectmember.models.js";
+import { User } from "../models/user.models.js";
 
 let io = null;
 
@@ -22,7 +23,7 @@ const initializeSocket = (socketIo) => {
     // Pehle koi bhi kisi bhi userId ka room join karke
     // uski notifications sun sakta tha. Ab login cookie verify hoti hai.
     // ==========================================
-    io.use((socket, next) => {
+    io.use(async (socket, next) => {
         try {
             const token =
                 getCookie(socket.handshake.headers.cookie, "accessToken") ||
@@ -34,6 +35,17 @@ const initializeSocket = (socketIo) => {
 
             const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
             socket.userId = decoded._id.toString();
+
+            // Typing indicator me naam dikhane ke liye
+            const user = await User.findById(socket.userId)
+                .select("username fullName")
+                .lean();
+
+            if (!user) {
+                return next(new Error("Unauthorized"));
+            }
+
+            socket.userName = user.fullName || user.username;
             next();
         } catch {
             next(new Error("Unauthorized"));
@@ -72,6 +84,23 @@ const initializeSocket = (socketIo) => {
 
         socket.on("leave-project", (projectId) => {
             socket.leave(`project:${projectId}`);
+        });
+
+        // ==========================================
+        // Chat: "X is typing..."
+        // Sirf wahi bhej sakta hai jo project room me hai (member check
+        // join-project par ho chuka hai). DB me kuch save nahi hota.
+        // ==========================================
+        socket.on("chat-typing", ({ projectId, isTyping } = {}) => {
+            const room = `project:${projectId}`;
+            if (!socket.rooms.has(room)) return;
+
+            socket.to(room).emit("chat-typing", {
+                projectId,
+                userId: socket.userId,
+                name: socket.userName,
+                isTyping: Boolean(isTyping),
+            });
         });
 
     });

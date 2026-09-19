@@ -18,6 +18,11 @@ const projectMemberSchema = new Schema(
       enum: AvailableUserRole,
       default: UserRolesEnum.MEMBER,
     },
+    // Chat me maine aakhri baar kab padha (unread count ke liye)
+    chatLastReadAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );

@@ -256,3 +256,9 @@ nav {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Chat panel right side se slide hota hai */
+@keyframes chat-slide-in {
+  from { transform: translateX(100%); opacity: 0.6; }
+  to   { transform: translateX(0); opacity: 1; }
+}
