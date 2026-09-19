@@ -31,6 +31,7 @@ const activitySchema = new Schema(
     "TASK_SUBMITTED",
     "TASK_REVIEWED",
     "TASK_STATUS_CHANGED",
+    "PROJECT_EXPORTED",
 
     "NOTE_CREATED",
     "NOTE_UPDATED",

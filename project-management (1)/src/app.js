@@ -11,6 +11,8 @@ app.use(
   cors({
     origin: allowedOrigins,
     credentials: true,
+    // Download ki file ka naam frontend padh sake
+    exposedHeaders: ["Content-Disposition"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),

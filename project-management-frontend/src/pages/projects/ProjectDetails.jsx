@@ -51,7 +51,7 @@ import { PageSkeleton } from "../../components/common/Skeleton";
 import TaskToolbar from "../../components/tasks/TaskToolbar";
 import KanbanBoard from "../../components/tasks/KanbanBoard";
 import ProjectChat from "../../components/chat/ProjectChat";
-import { LayoutGrid, List as ListIcon } from "lucide-react";
+import { LayoutGrid, List as ListIcon, BarChart3 } from "lucide-react";
 import DueBadge from "../../components/tasks/DueBadge";
 import {
     DEFAULT_TASK_FILTERS,
@@ -815,7 +815,7 @@ return (
             "
         >
 
-            <div className="flex justify-between items-start">
+            <div className="flex flex-wrap justify-between items-start gap-4">
 
                 <div>
 
@@ -844,9 +844,19 @@ return (
                 </div>
 
 
+                <div className="flex flex-wrap gap-3">
+
+                    <Link
+                        to={`/projects/${projectId}/analytics`}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 transition"
+                    >
+                        <BarChart3 size={16} />
+                        Analytics
+                    </Link>
+
                 {isAdmin && (
 
-                    <div className="flex gap-3">
+                    <>
 
                         <button
                             onClick={handleEditProject}
@@ -879,9 +889,11 @@ return (
                             Delete
                         </button>
 
-                    </div>
+                    </>
 
                 )}
+
+                </div>
 
             </div>
 

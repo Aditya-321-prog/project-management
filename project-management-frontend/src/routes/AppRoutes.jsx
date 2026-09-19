@@ -18,6 +18,7 @@ const Profile = lazy(() => import("../pages/profile/Profile"));
 const Projects = lazy(() => import("../pages/projects/Projects"));
 const CreateProject = lazy(() => import("../pages/projects/CreateProject"));
 const ProjectDetails = lazy(() => import("../pages/projects/ProjectDetails"));
+const ProjectAnalytics = lazy(() => import("../pages/projects/ProjectAnalytics"));
 const TaskDetails = lazy(() => import("../pages/tasks/TaskDetails"));
 const MyTasks = lazy(() => import("../pages/tasks/MyTasks"));
 
@@ -57,6 +58,7 @@ export default function AppRoutes() {
         <Route path="/projects" element={withSuspense(<Projects />)} />
         <Route path="/projects/create" element={withSuspense(<CreateProject />)} />
         <Route path="/projects/:projectId" element={withSuspense(<ProjectDetails />)} />
+        <Route path="/projects/:projectId/analytics" element={withSuspense(<ProjectAnalytics />)} />
         <Route
           path="/projects/:projectId/tasks/:taskId"
           element={withSuspense(<TaskDetails />)}

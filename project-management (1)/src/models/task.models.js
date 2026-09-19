@@ -37,6 +37,12 @@ const taskSchema = new Schema(
       type: Date,
     },
 
+    // Task kab complete hua (analytics ke liye) - apne aap set hota hai
+    completedAt: {
+      type: Date,
+      default: null,
+    },
+
     // Kis deadline ke liye reminder bhej chuke hain (duplicate na jaaye).
     // Deadline badli to ye match nahi karega aur naya reminder jaayega.
     reminders: {
@@ -172,6 +178,18 @@ reviewedAt: {
   },
   { timestamps: true },
 );
+
+// Status "completed" hote hi completedAt set, wapas khulne par hata do.
+// (Kanban, Edit, Review - sab task.save() use karte hain, isliye ek jagah kaafi hai)
+taskSchema.pre("save", function () {
+  if (this.isNew || this.isModified("status")) {
+    if (this.status === "completed") {
+      this.completedAt = this.completedAt || new Date();
+    } else {
+      this.completedAt = null;
+    }
+  }
+});
 
 // Project ke tasks jaldi dhoondne ke liye (sabse zyada use hone wali query)
 taskSchema.index({ project: 1, createdAt: -1 });

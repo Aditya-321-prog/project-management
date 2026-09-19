@@ -11,6 +11,8 @@ import {
   updateMemberRole,
 } from "../controllers/project.controllers.js";
 import { validate } from "../middlewares/validator.middleware.js";
+import { getProjectAnalytics } from "../controllers/analytics.controllers.js";
+import { exportProjectReport } from "../controllers/export.controllers.js";
 import {
   createProjectValidator,
   addMembertoProjectValidator,
@@ -56,5 +58,19 @@ router
   .route("/:projectId/members/:userId")
   .put(validateProjectPermission([UserRolesEnum.ADMIN]), updateMemberRole)
   .delete(validateProjectPermission([UserRolesEnum.ADMIN]), deleteMember);
+
+// Project analytics (sab members dekh sakte hain)
+router.get(
+  "/:projectId/analytics",
+  validateProjectPermission(AvailableUserRole),
+  getProjectAnalytics,
+);
+
+// Report download: ?format=pdf|csv&range=30
+router.get(
+  "/:projectId/export",
+  validateProjectPermission(AvailableUserRole),
+  exportProjectReport,
+);
 
 export default router;

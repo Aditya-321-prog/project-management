@@ -4,6 +4,7 @@ import { Notification } from "../models/notification.models.js";
 import { TaskStatusEnum } from "../utils/constants.js";
 import { getIO } from "../socket/socket.js";
 import { sendEmail, deadlineReminderMailgenContent } from "../utils/mail.js";
+import { DAY_MS, daysBetween, dueDateKey, localDateKey } from "../utils/date.js";
 
 // ==========================================================
 // Deadline reminders
@@ -13,23 +14,9 @@ import { sendEmail, deadlineReminderMailgenContent } from "../utils/mail.js";
 // Duplicate se bachne ke liye task.reminders me deadline save hoti hai.
 // ==========================================================
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const TIMEZONE = () => process.env.REMINDER_TIMEZONE || "Asia/Kolkata";
-
-// "2026-09-19" format me aaj ki date (India time ke hisaab se)
-const todayKey = (now = new Date()) =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: TIMEZONE(),
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(now);
-
-// Frontend "YYYY-MM-DD" bhejta hai -> DB me UTC midnight save hota hai
-const dateKey = (date) => new Date(date).toISOString().slice(0, 10);
-
-const daysBetween = (fromKey, toKey) =>
-  Math.round((Date.parse(toKey) - Date.parse(fromKey)) / DAY_MS);
+// Date helpers ab common file me (analytics bhi use karta hai)
+const todayKey = (now = new Date()) => localDateKey(now);
+const dateKey = dueDateKey;
 
 const sameDate = (a, b) => Boolean(a && b) && new Date(a).getTime() === new Date(b).getTime();
 

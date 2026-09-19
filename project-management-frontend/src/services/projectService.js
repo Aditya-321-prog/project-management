@@ -46,3 +46,15 @@ export const removeProjectMember = (
   api.delete(
     `/projects/${projectId}/members/${userId}`
   );
+// Analytics (range: 7 | 30 | 90 din)
+export const getProjectAnalytics = (projectId, range = 30) =>
+    api.get(`/projects/${projectId}/analytics`, { params: { range } });
+
+// Report download (PDF / CSV) - file blob ke roop me aati hai
+export const exportProjectReport = (projectId, format = "pdf", range = 30) =>
+    api.get(`/projects/${projectId}/export`, {
+        params: { format, range },
+        responseType: "blob",
+        // Error bhi blob me aata hai - page khud message dikhata hai
+        skipErrorToast: true,
+    });
